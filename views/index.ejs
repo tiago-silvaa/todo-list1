@@ -26,11 +26,15 @@
             <ul class="list-group"> 
                 <% tasks.forEach(task => { %>
                     <li class="list-group-item mt-2 mb-2">
-                        <span class="<%= task.completed ? 'completed' : '' %>"><%= task.description %></span>
+                        <span class="<%= task.completed ? 'completed' : '' %> description"><%= task.description %></span>
                         <div class="btn-group">
                             <% if (!task.completed) { %>
                                 <form action="/tasks/<%= task.id %>/complete" method="POST">
                                     <button type="submit" class="btn btn-success mx-1"><i class="bi bi-check-all"></i></button>
+                                </form>
+                            <% } else { %>
+                                <form action="/tasks/<%= task.id %>/notcomplete" method="POST">
+                                    <button type="submit" class="btn btn-warning mx-1"><i class="bi bi-arrow-counterclockwise"></i></button>
                                 </form>
                             <% } %>
                             <form action="/tasks/<%= task.id %>/delete" method="POST">

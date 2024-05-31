@@ -19,11 +19,11 @@ app.get('/', async (req, res) => {                                  //Definir ro
 });
 
 //-------------------------|Criar|---------------------------
-app.post('/tasks', async (req, res) => {                            //Define uma rota POST para '/tasks', quando se envia o formulário
-    const { description } = req.body;                               //Extrai propriedade "description" da request
+app.post('/tasks', async (req, res) => {                                                    //Define uma rota POST para '/tasks', quando se envia o formulário
+    const { description } = req.body;                                                       //Extrai propriedade "description" da request
     try {
-        await db.query('INSERT INTO tasks (description) VALUES (?)', [description]);  //Insere na base de dados a descrição da tarefa
-        res.redirect('/');                                          //Recarregar página
+        await db.query('INSERT INTO tasks (description) VALUES (?)', [description]);        //Insere na base de dados a descrição da tarefa
+        res.redirect('/');                                                                  //Recarregar página
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -31,10 +31,23 @@ app.post('/tasks', async (req, res) => {                            //Define uma
 
 //----------------------|Atualizar|-----------------------------
 
+//Atualizar para completed
 app.post('/tasks/:id/complete', async(req, res) => {                 //Definir rota POST para marcar uma tarefa como concluída com base no ID
     const { id } = req.params;                                      //Extrai o parâmetro "id" da request
     try {   
         await db.query('UPDATE tasks SET completed = TRUE WHERE id = ?', [id]);     //Executar consulta que atualize a tarefa para "completed"
+        res.redirect('/');     
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+//Atualizar para not complete
+app.post('/tasks/:id/notcomplete', async(req, res) => {                 //Definir rota POST para marcar uma tarefa como não concluída com base no ID
+    const { id } = req.params;                                      //Extrai o parâmetro "id" da request
+    try {   
+        await db.query('UPDATE tasks SET completed = FALSE WHERE id = ?', [id]);     //Executar consulta que atualize a tarefa para completed = false
         res.redirect('/');     
     }
     catch (err) {
@@ -53,6 +66,7 @@ app.post('/tasks/:id/delete', async (req, res) => {                 //Definir ro
         res.status(500).json({ error: err.message });
     }
 });
+
 
 //------------------------------------------------------------------
 const PORT = 3000;
