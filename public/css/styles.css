@@ -58,7 +58,7 @@ li {
 }
 
 .list-group-item .description {
-    overflow-wrap: break-word; /* Para navegadores modernos */
+    overflow-wrap: break-word; 
     word-break: break-all;
     margin-right: 10px;
 }
