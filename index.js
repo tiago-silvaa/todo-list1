@@ -2,10 +2,11 @@ const express = require("express");
 const app = express();
 const db = require("./db");
 const session = require("express-session");
+const path = require('path');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
 app.use(session({
@@ -69,12 +70,17 @@ app.post('/login', async(req, res) => {
 
 function authenticated(req, res, next) {
     if (req.session.user) {
-        res.locals.usernameDisplay = req.session.user.username;
         return next();
     } else {
         res.redirect('/');
     }
 }
+
+//Endpoint para display do username do user logado
+
+app.get('/username', authenticated, async(req, res) => {
+    res.json({ username: req.session.user.username});
+})
 
 //Logout: Terminar sessão
 
@@ -85,35 +91,51 @@ app.post('/logout', authenticated, async(req, res) => {
 
 //-------------------------|Read|-------------------------
 
-app.get('/dashboard', authenticated, async(req, res) => {
+//Endpoint para ir para a página das tarefas
 
-    const userId = req.session.user.id;
-    const stats = await getTaskStats(userId);
-
-    const [highTasks] = await db.query('SELECT * FROM tasks WHERE priority = "High" AND user_id = ?', [userId]);
-    const [mediumTasks] = await db.query('SELECT * FROM tasks WHERE priority = "Medium" AND user_id = ?', [userId]);
-    const [lowTasks] = await db.query('SELECT * FROM tasks WHERE priority = "Low" AND user_id = ?', [userId]);
-
-    res.render('dashboard', { highTasks, mediumTasks, lowTasks, stats });
-})
-
-//Endpoint para exibir todas as tarefas
 app.get('/todos', authenticated, async (req, res) => {
-    
-    const userId = req.session.user.id;
-    const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
-    res.render('index', { tasks } );
+    try {
+        const userId = req.session.user.id;
+        const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+        res.render('index', { tasks });
+    } catch (err) {
+        console.error('Error fetching tasks:', err);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
 })
+
+//Endpoint para ser possível fazer Fetch() dos dados da lista
+
+app.get('/todosData', authenticated, async (req, res) => {
+    
+    try {
+        const userId = req.session.user.id;
+        const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+        res.json(tasks);
+    } catch (err) {
+        console.error('Error fetching tasks:', err);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+});
 
 //Endpoint para exibir tarefas por propriedade
+
+app.get('/todos/filter-sort/:filter/:sort', authenticated, async(req, res) => {
+
+})
 
 app.get('/todos/filter/:priority', authenticated, async (req, res) => {
     const {priority} = req.params;
     const userId = req.session.user.id;
 
-    const [tasks] = await db.query('SELECT * FROM tasks WHERE priority = ? AND user_id = ?', [priority, userId]);
+    let tasks;
 
-    res.render('index', { tasks });
+    if (priority === 'All') {
+        [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+    }   else {
+        [tasks] = await db.query('SELECT * FROM tasks WHERE priority = ? AND user_id = ?', [priority, userId]);
+    }
+    res.json(tasks);
 })
 
 //Endpoint para exibir tarefas ordenadas 
@@ -134,22 +156,34 @@ app.get('/todos/sort/:sort', authenticated, async(req, res) => {
     } else {
         [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
     }
-
-    res.render('index', { tasks });
+    res.json(tasks);
     
 });
 
-//Endpoint que ordene tarefas quando um filtro está ativado?
-
-
 //Pesquisar tarefa
-app.get('/todos/search', authenticated, async (req, res) => {
-    const {searchedWord} = req.query;
+app.get('/todos/search/:search', authenticated, async (req, res) => {
+    const {search} = req.params;
     const userId = req.session.user.id;
 
-    const [tasks] = await db.query('SELECT * FROM tasks WHERE description LIKE ? AND user_id = ?', [`%${searchedWord}%`, userId]);
+    const [tasks] = await db.query('SELECT * FROM tasks WHERE description LIKE ? AND user_id = ?', [`%${search}%`, userId]);
 
-    res.render('index', { tasks });
+    res.json(tasks);
+})
+
+app.get('/dashboard', authenticated, async(req, res) => {
+    res.render('dashboard');
+})
+
+app.get('/dashboardData', authenticated, async(req, res) => {
+
+    const userId = req.session.user.id;
+    const stats = await getTaskStats(userId);
+
+    const [highTasks] = await db.query('SELECT * FROM tasks WHERE priority = "High" AND user_id = ?', [userId]);
+    const [mediumTasks] = await db.query('SELECT * FROM tasks WHERE priority = "Medium" AND user_id = ?', [userId]);
+    const [lowTasks] = await db.query('SELECT * FROM tasks WHERE priority = "Low" AND user_id = ?', [userId]);
+
+    res.json( { highTasks, mediumTasks, lowTasks, stats } );
 })
 
 //-------------------------|Create|---------------------------
@@ -179,13 +213,13 @@ app.post('/todos', authenticated, async (req, res) => {
 
 //Atualizar tarefa (atualizar descrição, estado e prioridade)
 
-app.post('/todos/:id/update', authenticated, async(req, res) => {
+app.post('/todos/:id/update', authenticated, async (req, res) => {
     const { id } = req.params;
     const { editDescription, editPriority } = req.body;
     const userId = req.session.user.id;
 
     await db.query('UPDATE tasks SET description = ?, priority = ? WHERE id = ? AND user_id = ?', [editDescription, editPriority, id, userId]);
-    res.json();
+    res.json({ success: true });
 });
 
 
@@ -195,7 +229,8 @@ app.post('/todos/:id/complete', authenticated, async(req, res) => {
     const userId = req.session.user.id;
     try {   
         await db.query('UPDATE tasks SET completed = TRUE WHERE id = ? AND user_id = ?', [id, userId]);
-        res.json();
+        const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);  
+        res.json(tasks);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -208,7 +243,8 @@ app.post('/todos/completeAll', authenticated, async(req, res) => {
     const userId = req.session.user.id;
 
     await db.query('UPDATE tasks SET completed = TRUE WHERE completed = FALSE AND user_id = ?', [userId]);
-    res.status(200).json({ message: 'All Tasks Completed'});
+    const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);  
+    res.json(tasks);
 });
 
 //Atualizar para not completed
@@ -216,8 +252,11 @@ app.post('/todos/:id/notcomplete', authenticated, async(req, res) => {
     const { id } = req.params;
     const userId = req.session.user.id;                           
     try {   
-        await db.query('UPDATE tasks SET completed = FALSE WHERE id = ? AND user_id = ?', [id, userId]);    
-        res.json();   
+        await db.query('UPDATE tasks SET completed = FALSE WHERE id = ? AND user_id = ?', [id, userId]);
+        
+        const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);  
+
+        res.json(tasks);  
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -228,8 +267,10 @@ app.post('/todos/incompleteAll', authenticated, async(req, res) => {
 
     const userId = req.session.user.id;
     await db.query('UPDATE tasks SET completed = FALSE WHERE user_id = ?', [userId]);
-    res.json();
 
+    const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+    
+    res.json(tasks);
 });
 
 
@@ -239,8 +280,11 @@ app.post('/todos/:id/delete', authenticated, async (req, res) => {
     const { id } = req.params;
     const userId = req.session.user.id;
     try {
-        await db.query('DELETE FROM tasks WHERE id = ? AND user_id = ?', [id, userId]);        
-        res.json();
+        await db.query('DELETE FROM tasks WHERE id = ? AND user_id = ?', [id, userId]);
+
+        const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+        res.json(tasks);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -252,7 +296,8 @@ app.post('/todos/deleteAllCompleted', authenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     await db.query('DELETE FROM tasks WHERE completed = true AND user_id = ?', [userId]);
-    res.json();
+    const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);  
+    res.json(tasks);
 });
 
 app.post('/todos/deleteAll', authenticated, async (req, res) => {
@@ -260,7 +305,9 @@ app.post('/todos/deleteAll', authenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     await db.query('DELETE FROM tasks WHERE user_id = ?', [userId]);
-    res.json();
+    const [tasks] = await db.query('SELECT * FROM tasks WHERE user_id = ?', [userId]);
+    
+    res.json(tasks);
 });
 
 //------------------------------------------------------------------

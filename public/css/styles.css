@@ -215,5 +215,9 @@ li {
     margin: 0 auto;
 }
 
+.custom-modal-size {
+    max-width: 32%;
+}
+
 
 
