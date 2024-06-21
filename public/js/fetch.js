@@ -84,6 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTasks(search);
     });
 
+    document.getElementById('editTaskForm').addEventListener('submit', function(event) {
+        event.preventDefault(); 
+    
+        const id = document.getElementById('task-id').value;
+        const newDescription = document.getElementById('newDescription').value;
+        const newPriority = document.getElementById('newPriority').value;
+    
+        editTask(id, newDescription, newPriority);
+    });
+
 });
 
 
@@ -167,16 +177,6 @@ function fillEditForm(id, description, priority) {
     document.getElementById('newDescription').value = description;
     document.getElementById('newPriority').value = priority;
 }
-
-document.getElementById('editTaskForm').addEventListener('submit', function(event) {
-    event.preventDefault(); 
-
-    const id = document.getElementById('task-id').value;
-    const newDescription = document.getElementById('newDescription').value;
-    const newPriority = document.getElementById('newPriority').value;
-
-    editTask(id, newDescription, newPriority);
-});
 
 function editTask(id, newDescription, newPriority) {
     fetch(`/todos/${id}/update`, {
