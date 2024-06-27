@@ -9,6 +9,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
+async function checkDbConnection() {
+    try {
+        await db.query('SELECT 1');
+        console.log('Conectado à base de dados.');
+    } catch (err) {
+        console.error('Erro ao conectar à base de dados: ', err);
+    }
+}
+checkDbConnection();
+
 app.use(session({
     secret: 'todo',
     resave: false,
@@ -33,19 +43,21 @@ app.get('/register', async( req, res) => {
 })
 
 //Efetuar registo
-app.post('/register', async( req, res) => {
+app.post('/registerUser', async( req, res) => {
     
-    const { username, password} = req.body;
+    const { username, password} = req.body;   
 
     try {
         await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, password]);
-        req.session.message = { type: 'success', content: 'Registration successful, please log in.' };
-        res.redirect('login');
+        req.session.message = { type: 'success', content: 'Registration successful, please login.' };
+        res.json(req.session.message);
     }
     catch (err) {
-        res.status(500).json({ error: 'Failed to register user' });
+        req.session.message = { type: 'danger', content: 'Invalid credentials, please try again.'};
+        res.json(req.session.message);
     }
 })
+
 
 //Direcionar para página de login
 app.get('/login', async( req, res) => {
@@ -60,11 +72,11 @@ app.post('/login', async(req, res) => {
 
     if (userData.length === 0 || userData[0].password !== password) {
         req.session.message = { type: 'danger', content: 'Invalid username / password' };
-        return res.redirect('/login');;
+        res.json(req.session.message);
     } else {
-        req.session.message = { type: 'success', content: 'Successful login' };
+        req.session.message = { type: 'success', content: 'You can now manage your Todos!' };
         req.session.user = { id: userData[0].id, username };
-        res.redirect('/todos') 
+        res.json(req.session.message);
     }
 })
 
@@ -334,7 +346,7 @@ async function getTaskStats(userId) {
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Servidor executado com sucesso em http://localhost:${PORT}`);
 });
 
 //http://localhost:3000

@@ -9,15 +9,17 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.3/font/bootstrap-icons.min.css">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
     <title>Todo List</title>
 
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <div class="text-end mt-3">
-        <a href="/dashboard" class="btn btn-outline-light btn-lg me-3">User Dashboard</a>
-        <button id="usernameDisplay" type="button" class="btn btn-outline-light me-2" style="border-radius: 40px;"></button>
-        <button type="button" class="btn btn-danger" style="margin-right: 50px; border-radius: 40px;" data-bs-toggle="modal" data-bs-target="#logoutModal">
+    <div class="text-end">
+        <a href="/dashboard" class="btn btn-outline-light me-3 btn-lg mt-3">User Dashboard</a>
+        <button id="usernameDisplay" type="button" class="btn btn-outline-light me-2 mt-3" style="border-radius: 40px;"></button>
+        <button type="button" class="btn btn-danger mt-3" style="margin-right: 50px; border-radius: 40px;" data-bs-toggle="modal" data-bs-target="#logoutModal">
             Logout <i class="bi bi-box-arrow-left"></i>
         </button>
     </div>
@@ -39,19 +41,9 @@
                 </form>
                 <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Close</button>
             </div>
-      
           </div>
         </div>
     </div>
-
-    <% if (message) { %>
-        <div class="container mb-3">
-            <div class="custom-alert alert alert-<%= message.type %> alert-dismissible fade show col-md-6 mx-auto" role="alert">
-                <%= message.content %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
-    <% } %>
 
     <!--Aplicação Todo-->
     <div class="container container1">
@@ -110,7 +102,7 @@
                 <div class="input-group" id="search-filter">
                     <input type="search" name="searchWord" id="searchInput" class="form-control" placeholder="Search task">
                     <button type="submit" id="searchBtn" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                    <button type="button" id="clearSearch" class="btn btn-outline-dark" onclick="fetchTasks()">Cancel <i class="bi bi-arrow-90deg-left"></i></button>
+                    <button type="button" id="clearSearch" class="btn btn-outline-dark">Cancel <i class="bi bi-arrow-90deg-left"></i></button>
                 </div>
             </form>
 
@@ -183,6 +175,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="/js/fetch.js"></script>
 </body>

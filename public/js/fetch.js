@@ -57,6 +57,7 @@ function displayTasks(tasks) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+
     fetchTasks();
 
     displayUsername();
@@ -73,6 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (sort === '') {
             fetchTasks();
+            Swal.fire({
+                position: 'top-start',
+                icon: 'success',
+                title: 'Task sort option <strong>removed</strong>!',
+                toast: true,
+                showConfirmButton: false,
+                timer: 1350,
+                timerProgressBar: true,
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOut animate__faster'
+                }
+            });
         } else {
             sortTasks(sort);
         }   
@@ -82,6 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const search = document.getElementById('searchInput').value;
         searchTasks(search);
+    });
+
+    document.getElementById('clearSearch').addEventListener('click',function(event) {
+        event.preventDefault();
+        fetchTasks();
+        Swal.fire({
+            position: 'top',
+            icon: 'success',
+            title: 'Tasks search set off!',
+            showConfirmButton: false,
+            timer: 1000,
+            timerProgressBar: true,
+        })
     });
 
     document.getElementById('editTaskForm').addEventListener('submit', function(event) {
@@ -97,12 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
 //----------------------Criar tarefa-------------------
 document.getElementById('task-form').addEventListener('submit', (event) => {
     event.preventDefault();
     const description = document.getElementById('description').value;
     const priority = document.getElementById('priority').value;
-
+    
     createTask(description, priority);
 });
 
@@ -117,47 +144,29 @@ function createTask(description, priority) {
     .then(response => response.json())
     .then(task => {
         fetchTasks();
+        Swal.fire({
+            position: 'top-start',
+            icon: 'success',
+            title: 'Task added!',
+            toast: true,
+            showConfirmButton: false,
+            timer: 1350,
+            timerProgressBar: true,
+            hideClass: {
+                popup: 'animate__animated animate__fadeOut animate__faster'
+            }
+        });
         document.getElementById('description').value = '';
     })
 }
 
 //----------------------Registo---------------------
 
-document.getElementById('register-form').addEventListener('submit', function() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    registerUser(username, password);
-});
-
-function registerUser(username, password) {
-    fetch('/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-    })
-}
+//Na página do registo como script (Só funciona se meter os scripts nas páginas)
 
 //------------------Login------------------------
 
-document.getElementById('login-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-
-    loginUser(username, password);
-});
-
-function loginUser(username, password) {
-    return fetch('/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-    })
-}
+//Na página do login como script 
 
 //----------------------Display de username---------------------
 
@@ -179,6 +188,7 @@ function fillEditForm(id, description, priority) {
 }
 
 function editTask(id, newDescription, newPriority) {
+    //Swal para pop-up com form? (Retirar modal de edit?)
     fetch(`/todos/${id}/update`, {
         method: 'POST',
         headers: {
@@ -196,6 +206,10 @@ function editTask(id, newDescription, newPriority) {
         fetchTasks();
         let modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
         modal.hide();
+        Swal.fire({
+            title: 'Task Updated!',
+            icon: 'success'
+        })
     })
     .catch(error => {
         console.error('Error updating task:', error);
@@ -214,37 +228,90 @@ function completeTask(id) {
     .then(response => response.json())
     .then(() => {
         fetchTasks();
+        Swal.fire({
+            position: 'top-start',
+            icon: 'success',
+            title: 'Task set as complete!',
+            toast: true,
+            showConfirmButton: false,
+            timer: 1350,
+            timerProgressBar: true,
+            hideClass: {
+                popup: 'animate__animated animate__fadeOut animate__faster'
+            }
+        });
     })
 }
 
 //-------------------Incompletar tarefa---------------
 
 function incompleteTask(id) {
-    fetch(`/todos/${id}/notcomplete`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    })
-        .then(response => response.json())
-        .then(tasks => {
-            fetchTasks(tasks);
-        })
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Set the task back in progress?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, recover task!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/todos/${id}/notcomplete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+                .then(response => response.json())
+                .then(tasks => {
+                    fetchTasks(tasks);
+                    Swal.fire({
+                        position: 'top-start',
+                        icon: 'success',
+                        title: 'Task set in progress!',
+                        toast: true,
+                        showConfirmButton: false,
+                        timer: 1350,
+                        timerProgressBar: true,
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOut animate__faster'
+                        }
+                    });
+                })
+        }
+    })    
 }
 
 //-----------------Apagar tarefa---------------------
 
 function deleteTask(id) {
-    fetch(`/todos/${id}/delete`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    })
-        .then(response => response.json())
-        .then(tasks => {
-            fetchTasks(tasks);
-        })
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete the selected task?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete task!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/todos/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => response.json())
+            .then(tasks => {
+                fetchTasks(tasks);
+                Swal.fire(
+                    'Deleted!',
+                    'Your task has been deleted.',
+                    'success'
+                );
+            });
+        }
+    });
 }
 
 //-----------------------Filtrar tarefa-------------------
@@ -254,6 +321,26 @@ function filterTasks(priority) {
         .then(response => response.json())
         .then(tasks => {
             displayTasks(tasks);
+
+            let swalFilter;
+            if (priority === 'All') {
+                swalFilter = 'Priority filter set <strong>off</strong>.';
+            } else {
+                swalFilter = `Tasks filtered by <strong>${priority}</strong> priority.`
+            }
+
+            Swal.fire({
+                position: 'top-start',
+                icon: 'success',
+                title: swalFilter,
+                toast: true,
+                showConfirmButton: false,
+                timer: 1350,
+                timerProgressBar: true,
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOut animate__faster'
+                }
+            })
         })
 }
 
@@ -265,6 +352,38 @@ function sortTasks(sort) {
         .then(response => response.json())
         .then(tasks => {
             displayTasks(tasks);
+
+            let swalSort;
+
+            switch (sort) {
+                case 'LowToHigh':
+                    swalSort = 'Tasks sorted from <strong>Low</strong> to <strong>High</strong> priority';
+                    break;
+                case 'HighToLow':
+                    swalSort = 'Task sorted from <strong>High</strong> to <strong>Low</strong> priority';
+                    break;
+                case 'AToZ':
+                    swalSort = 'Tasks ordered in <strong>alphabetic</strong> order (A-Z)';
+                    break;
+                case 'ZToA':
+                    swalSort = 'Tasks ordered in <strong>reverse alphabetic</strong> order (Z-A)';
+                    break;
+                default:
+                    swalSort = 'Tasks sort option removed';
+            }
+
+            Swal.fire({
+                position: 'top-start',
+                icon: 'success',
+                title: swalSort,
+                toast: true,
+                showConfirmButton: false,
+                timer: 1350,
+                timerProgressBar: true,
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOut animate__faster'
+                }
+            })
         })
 }
 
@@ -275,42 +394,93 @@ function searchTasks(search) {
         .then(response => response.json())
         .then(tasks => {
             displayTasks(tasks);
+            Swal.fire({
+                position: 'top-start',
+                icon: 'success',
+                title: `Searched tasks by "${search}"`,
+                toast: true,
+                showConfirmButton: false,
+                timer: 1600,
+                timerProgressBar: true,
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOut animate__faster'
+                }
+            })
         })
 }
 
 //----------------Completar todas as tarefas----------------
 
 function completeAllTasks() {
-    fetch(`/todos/completeAll`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+    Swal.fire({
+        title: 'Complete all tasks?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#00994d',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes <i class="bi bi-check-all"></i>'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/todos/completeAll`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+                .then(response => response.json())
+                .then(tasks => {
+                    fetchTasks(tasks);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'All tasks set as completed!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                        timerProgressBar: true,
+                    })
+                })
+        }
     })
-        .then(response => response.json())
-        .then(tasks => {
-            fetchTasks(tasks);
-        })
 }
+    
+
 
 //----------------Incompletar todas as tarefas---------------
 
 function incompleteAllTasks() {
-    fetch(`/todos/incompleteAll`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+    Swal.fire({
+        title: 'Incomplete all tasks?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e6b800',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes <i class="bi bi-arrow-counterclockwise"></i>'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/todos/incompleteAll`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+                .then(response => response.json())
+                .then((tasks) => {
+                    fetchTasks(tasks);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'All tasks set back in progress!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                        timerProgressBar: true,
+                    })
+                })
+        }
     })
-        .then(response => response.json())
-        .then((tasks) => {
-            fetchTasks(tasks);
-        })
 }
 
 //-----------------Apagar tarefas completadas-----------------
 
 function deleteAllCompleted() {
+    
     fetch(`/todos/deleteAllCompleted`, {
         method: 'POST',
         headers: {
@@ -320,12 +490,14 @@ function deleteAllCompleted() {
         .then(response => response.json())
         .then((tasks) => {
             fetchTasks(tasks);
+            //Swal de notificação
         })
 }
 
 //-----------------Apagar todas as tarefas------------------
 
 function deleteAll() {
+    //Retirar modal bootstrap e aplicar swal
     fetch(`/todos/deleteAll`, {
         method: 'POST',
         headers: {
@@ -335,6 +507,7 @@ function deleteAll() {
         .then(response => response.json())
         .then((tasks) => {
             fetchTasks(tasks);
+            //Swal de notificação de tarefas apagadas
             let modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirm'));
             modal.hide();
         })
@@ -400,4 +573,10 @@ function displayLowTasks(tasks) {
         `;
         taskList.appendChild(li);
     });
+}
+
+
+function logoutUser() {
+    //Programar Swal
+    //Programar fetch /logout
 }
